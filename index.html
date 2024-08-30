@@ -1,0 +1,124 @@
+<html><head><base href="https://voxelchat.io/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoxelChat - Discord-like app powered by Element Matrix</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="https://unpkg.com/matrix-js-sdk/lib/browser-matrix.js"></script>
+<style>
+  body {
+    font-family: 'Whitney', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background-color: #36393f;
+    color: #dcddde;
+  }
+  .sidebar {
+    background-color: #2f3136;
+    width: 240px;
+  }
+  .channel-list {
+    background-color: #2f3136;
+  }
+  .chat-area {
+    background-color: #36393f;
+  }
+  .message-input {
+    background-color: #40444b;
+  }
+</style>
+</head>
+<body>
+  <div id="app" class="flex h-screen">
+    <div class="sidebar flex flex-col">
+      <div class="p-4 text-xl font-bold">VoxelChat</div>
+      <div class="flex-grow overflow-y-auto">
+        <div v-for="server in servers" class="p-2 hover:bg-gray-700 cursor-pointer">
+          {{ server.name }}
+        </div>
+      </div>
+    </div>
+    <div class="channel-list w-60 flex flex-col">
+      <div class="p-4 font-semibold">Channels</div>
+      <div class="flex-grow overflow-y-auto">
+        <div v-for="channel in channels" class="p-2 hover:bg-gray-700 cursor-pointer">
+          # {{ channel.name }}
+        </div>
+      </div>
+    </div>
+    <div class="chat-area flex-grow flex flex-col">
+      <div class="p-4 font-semibold border-b border-gray-700">General</div>
+      <div class="flex-grow overflow-y-auto p-4">
+        <div v-for="message in messages" class="mb-4">
+          <div class="font-semibold">{{ message.sender }}</div>
+          <div>{{ message.content }}</div>
+        </div>
+      </div>
+      <div class="message-input p-4">
+        <input type="text" v-model="newMessage" @keyup.enter="sendMessage" placeholder="Type a message..." class="w-full p-2 rounded bg-gray-700 text-white">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref } = Vue;
+
+    createApp({
+      setup() {
+        const servers = ref([
+          { name: 'VoxelChat Official' },
+          { name: 'Gaming Community' },
+          { name: 'Developers Hub' }
+        ]);
+
+        const channels = ref([
+          { name: 'general' },
+          { name: 'introductions' },
+          { name: 'off-topic' }
+        ]);
+
+        const messages = ref([
+          { sender: 'Alice', content: 'Hey everyone! Welcome to VoxelChat!' },
+          { sender: 'Bob', content: 'Thanks! This looks great!' },
+          { sender: 'Charlie', content: 'I love the voxel theme!' }
+        ]);
+
+        const newMessage = ref('');
+
+        const sendMessage = () => {
+          if (newMessage.value.trim()) {
+            messages.value.push({
+              sender: 'You',
+              content: newMessage.value
+            });
+            newMessage.value = '';
+          }
+        };
+
+        return {
+          servers,
+          channels,
+          messages,
+          newMessage,
+          sendMessage
+        };
+      }
+    }).mount('#app');
+
+    // Initialize Matrix client
+    const client = matrixcs.createClient({
+      baseUrl: "https://matrix.org",
+      userId: "@voxelchat:matrix.org",
+      accessToken: "YOUR_ACCESS_TOKEN"
+    });
+
+    client.on("Room.timeline", function(event, room, toStartOfTimeline) {
+      if (event.getType() !== "m.room.message") {
+        return; // only use messages
+      }
+      console.log(event.event.content.body);
+      // Here you would update the messages array with the new message
+    });
+
+    client.startClient();
+  </script>
+</body>
+</html>
